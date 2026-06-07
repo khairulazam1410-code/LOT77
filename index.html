@@ -299,11 +299,11 @@
             if (item.tiadaKaveat) {
                 kaveatContent = 'TIADA KAVEAT';
             } else {
-                kaveatContent = `<label style="display:flex; align-items:center;"><input type="checkbox" data-plot="${plotKey}" data-type="kaveat" ${isKaveatTicked ? 'checked' : ''}><span style="margin-left:8px; font-weight:bold; color:#2c3e50;">Kaveat Disahkan</span></label>`;
+                kaveatContent = `<label style="display:flex; align-items:center;"><input type="checkbox" data-plot="${plotKey}" data-type="kaveat" ${isKaveatTicked ? 'checked' : ''}><span style="margin-left:8px; font-weight:bold; color:#2c3e50;">Kaveat Ditarik</span></label>`;
             }
 
-            let spaContent = `<label style="display:flex; align-items:center;"><input type="checkbox" data-plot="${plotKey}" data-type="spa" ${isSpaTicked ? 'checked' : ''}><span style="margin-left:8px; font-weight:bold; color:#2c3e50;">SPA Disahkan</span></label>`;
-            let pmContent = `<label style="display:flex; align-items:center;"><input type="checkbox" data-plot="${plotKey}" data-type="pindahmilik" ${isPindahMilikTicked ? 'checked' : ''}><span style="margin-left:8px; font-weight:bold; color:#2c3e50;">MOT Disahkan</span></label>`;
+            let spaContent = `<label style="display:flex; align-items:center;"><input type="checkbox" data-plot="${plotKey}" data-type="spa" ${isSpaTicked ? 'checked' : ''}><span style="margin-left:8px; font-weight:bold; color:#2c3e50;">SPA Dibayar</span></label>`;
+            let pmContent = `<label style="display:flex; align-items:center;"><input type="checkbox" data-plot="${plotKey}" data-type="pindahmilik" ${isPindahMilikTicked ? 'checked' : ''}><span style="margin-left:8px; font-weight:bold; color:#2c3e50;">MOT Dibayar</span></label>`;
 
             tr.innerHTML = `
                 <td data-label="📌 PLOT KAWASAN" style="font-weight: bold; font-size: 18px; color: #e74c3c; text-align:center;">${item.plot}</td>
