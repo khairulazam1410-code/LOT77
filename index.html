@@ -168,9 +168,9 @@
 
 <script>
     // ==========================================
-    // WEB APP URL GOOGLE SHEETS ANDA (Dikekalkan)
+    // WEB APP URL GOOGLE SHEETS ANDA (TERKINI)
     // ==========================================
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVtbxvMhyRBX28m3pyLkSJ7u2UG0wamNpudlECxaRYHj8YvfX-Nx366NlI9ZOzrVuW/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2aOd2-P7FT2zDuBh2is_DEGA473zRPqZf_e-RjGg8cE3QJFB0I-I51hF_URFQ-RfB/exec";
     // ==========================================
 
     // Data dikemaskini berdasarkan gambar terbaru
@@ -202,4 +202,157 @@
         { plot: "19", name: "Mohd Faizal Bin Abdullah @ Husain (Cikgu)", tiadaKaveat: true, defKav: false, defSpa: true, defPM: true },
         { plot: "20", name: "En. Rahman", defKav: true, defSpa: false, defPM: false },
         { plot: "21", name: "Halimatus Sa'adiah Binti Talib (Cikgu)", defKav: true, defSpa: false, defPM: false },
-        { plot: "23",
+        { plot: "23", name: "Hajah Siti Norashikin", defKav: true, defSpa: false, defPM: false },
+        { plot: "24", name: "", defKav: false, defSpa: false, defPM: false },
+        { plot: "25", name: "", defKav: false, defSpa: false, defPM: false },
+        { plot: "26", name: "", defKav: false, defSpa: false, defPM: false },
+        { plot: "27", name: "", defKav: false, defSpa: false, defPM: false },
+        { plot: "28", name: "", defKav: false, defSpa: false, defPM: false },
+        { plot: "29", name: "", defKav: false, defSpa: false, defPM: false },
+        { plot: "30", name: "", defKav: false, defSpa: false, defPM: false },
+        { plot: "31", name: "", defKav: false, defSpa: false, defPM: false },
+        { plot: "32", name: "", defKav: false, defSpa: false, defPM: false },
+        { plot: "33", name: "", defKav: false, defSpa: false, defPM: false },
+        { plot: "34", name: "En. Masiron", defKav: true, defSpa: true, defPM: true },
+        { plot: "35", name: "", defKav: false, defSpa: false, defPM: false }
+    ];
+
+    const tbody = document.querySelector("#landTable tbody");
+    const statusMsg = document.getElementById("status-msg");
+
+    function showStatus(message) {
+        statusMsg.textContent = message;
+        statusMsg.style.display = "block";
+        setTimeout(() => { statusMsg.style.display = "none"; }, 3000);
+    }
+
+    function loadData() {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 30px; color: #3498db;">Mengambil data terkini... Sila tunggu...</td></tr>`;
+        
+        fetch(SCRIPT_URL)
+            .then(response => response.json())
+            .then(sheetsData => {
+                renderTable(sheetsData);
+            })
+            .catch(error => {
+                console.error("Ralat fetching data:", error);
+                alert("Gagal menyambung ke Google Sheets.");
+                renderTable({});
+            });
+    }
+
+    function renderTable(sheetsData) {
+        tbody.innerHTML = "";
+        
+        defaultDataList.forEach((item) => {
+            const tr = document.createElement("tr");
+            const plotKey = item.plot;
+
+            // Logik Default atau Data dari Sheets
+            let isKaveatTicked = item.defKav;
+            if (sheetsData[plotKey] && sheetsData[plotKey].hasOwnProperty('kaveat')) {
+                isKaveatTicked = sheetsData[plotKey].kaveat;
+            }
+            
+            let isSpaTicked = item.defSpa;
+            if (sheetsData[plotKey] && sheetsData[plotKey].hasOwnProperty('spa')) {
+                isSpaTicked = sheetsData[plotKey].spa;
+            }
+            
+            let isPindahMilikTicked = item.defPM;
+            if (sheetsData[plotKey] && sheetsData[plotKey].hasOwnProperty('pindahmilik')) {
+                isPindahMilikTicked = sheetsData[plotKey].pindahmilik;
+            }
+
+            // Tetapan CSS (Hijau / Merah / Kelabu)
+            const kaveatClass = item.tiadaKaveat ? 'tiada-kaveat-cell' : (isKaveatTicked ? 'center-check ticked-cell' : 'center-check unticked-cell');
+            const spaClass = isSpaTicked ? 'center-check ticked-cell' : 'center-check unticked-cell';
+            const pindahMilikClass = isPindahMilikTicked ? 'center-check ticked-cell' : 'center-check unticked-cell';
+
+            // Nama Pemilik
+            const savedName = (sheetsData[plotKey] && sheetsData[plotKey].name !== undefined && sheetsData[plotKey].name !== "") ? sheetsData[plotKey].name : item.name;
+            let nameContent = `<input type="text" class="name-input" data-plot="${plotKey}" value="${savedName}" placeholder="Taip nama pemilik baru...">`;
+
+            // Ruangan Kaveat (Checkbox ATAU Teks)
+            let kaveatContent = '';
+            if (item.tiadaKaveat) {
+                kaveatContent = 'TIADA KAVEAT';
+            } else {
+                kaveatContent = `<input type="checkbox" data-plot="${plotKey}" data-type="kaveat" ${isKaveatTicked ? 'checked' : ''}>`;
+            }
+
+            tr.innerHTML = `
+                <td style="text-align: center; font-weight: bold;">${item.plot}</td>
+                <td>${nameContent}</td>
+                <td class="${kaveatClass}">${kaveatContent}</td>
+                <td class="${spaClass}">
+                    <input type="checkbox" data-plot="${plotKey}" data-type="spa" ${isSpaTicked ? 'checked' : ''}>
+                </td>
+                <td class="${pindahMilikClass}">
+                    <input type="checkbox" data-plot="${plotKey}" data-type="pindahmilik" ${isPindahMilikTicked ? 'checked' : ''}>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // Event: Checkbox di-tick atau di-untick
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const plot = this.getAttribute('data-plot');
+                const type = this.getAttribute('data-type');
+                const isChecked = this.checked;
+
+                // Tukar warna UI (Tukar Hijau/Merah)
+                if(isChecked) {
+                    this.parentElement.classList.add('ticked-cell');
+                    this.parentElement.classList.remove('unticked-cell');
+                } else {
+                    this.parentElement.classList.add('unticked-cell');
+                    this.parentElement.classList.remove('ticked-cell');
+                }
+
+                // Hantar update ke Google Sheets
+                showStatus("Menyimpan perubahan tick...");
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'updateCheckbox',
+                        plot: plot,
+                        type: type,
+                        value: isChecked
+                    })
+                }).then(() => showStatus("Perubahan berjaya disimpan!"))
+                  .catch(e => alert("Ralat menyimpan data: " + e));
+            });
+        });
+
+        // Event: Nama ditaip
+        document.querySelectorAll('.name-input').forEach(input => {
+            input.addEventListener('change', function() { 
+                const plot = this.getAttribute('data-plot');
+                const newName = this.value;
+
+                showStatus("Menyimpan nama baru...");
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'updateName',
+                        plot: plot,
+                        value: newName
+                    })
+                }).then(() => showStatus("Nama berjaya disimpan!"))
+                  .catch(e => alert("Ralat menyimpan data: " + e));
+            });
+        });
+    }
+
+    loadData();
+
+</script>
+
+</body>
+</html>
