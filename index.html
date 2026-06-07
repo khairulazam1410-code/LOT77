@@ -3,11 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Status Pengurusan LOT 77 (Firebase Live)</title>
+    <title>Status Pengurusan LOT 77 (Google Sheets)</title>
     
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -53,10 +50,10 @@
             z-index: 10;
             text-align: center;
         }
-        tr:nth-child(even) {
+        tr:nth-child(even) td:not(.ticked-cell):not(.unticked-cell):not(.tiada-kaveat-cell) {
             background-color: #f9f9f9;
         }
-        tr:hover {
+        tr:hover td:not(.ticked-cell):not(.unticked-cell):not(.tiada-kaveat-cell) {
             background-color: #f1f1f1;
         }
         .center-check {
@@ -68,12 +65,23 @@
             accent-color: #27ae60;
         }
         
-        /* Highlight hijau bila tick */
+        /* WARNA HIJAU UNTUK SELESAI */
         .ticked-cell {
             background-color: #d5f5e3 !important; 
         }
+        /* WARNA MERAH UNTUK BELUM SELESAI */
+        .unticked-cell {
+            background-color: #fadbd8 !important; 
+        }
+        /* KELABU UNTUK TIADA KAVEAT */
+        .tiada-kaveat-cell {
+            background-color: #eaeded !important;
+            color: #7f8c8d;
+            font-weight: bold;
+            font-size: 13px;
+            text-align: center;
+        }
 
-        /* Input untuk nama kosong */
         .name-input {
             width: 95%;
             padding: 8px;
@@ -81,7 +89,6 @@
             border-radius: 4px;
             font-family: inherit;
         }
-
         .controls {
             display: flex;
             justify-content: space-between;
@@ -100,21 +107,41 @@
         button:hover {
             background-color: #c0392b;
         }
+        .btn-refresh {
+            background-color: #3498db;
+        }
+        .btn-refresh:hover {
+            background-color: #2980b9;
+        }
         .info-text {
             font-size: 13px;
             color: #27ae60;
             font-weight: bold;
+        }
+        #status-msg {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #2c3e50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Senarai Pengurusan Hartanah: LOT 77 (Sistem Cloud)</h2>
+    <h2>Senarai Pengurusan Hartanah: LOT 77 (Data Google Sheets)</h2>
     
     <div class="controls">
-        <span class="info-text">☁️ Firebase Connected: Data dikemaskini secara LIVE di semua peranti.</span>
-        <button onclick="clearData()">Reset Semua Data Cloud</button>
+        <span class="info-text">📊 Disambungkan ke Google Sheets. Disimpan automatik. (Hijau = Selesai, Merah = Belum)</span>
+        <div>
+            <button class="btn-refresh" onclick="loadData()">🔄 Refresh Data</button>
+            </div>
     </div>
 
     <div class="table-responsive">
@@ -125,173 +152,54 @@
                     <th width="35%" style="text-align: left;">NAMA</th>
                     <th width="15%" class="center-check">Tarik Kaveat</th>
                     <th width="20%" class="center-check">Bayaran SPA<br><small style="font-weight: normal;">(RM272.40 / RM372.40)</small></th>
-                    <th width="25%" class="center-check">Bayaran Pindah Milik<br><small style="font-weight: normal;">(Mengikut invoice dihantar pada pemilik tanah)</small></th>
+                    <th width="25%" class="center-check">Bayaran Pindah Milik (MOT)<br><small style="font-weight: normal;">(Mengikut invoice dihantar pada pemilik tanah)</small></th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td colspan="5" style="text-align: center; padding: 30px; color: #7f8c8d;">Memuatkan data dari awan (cloud)...</td>
+                    <td colspan="5" style="text-align: center; padding: 30px; color: #7f8c8d;">Mengambil data dari Google Sheets... Sila tunggu...</td>
                 </tr>
             </tbody>
         </table>
     </div>
 </div>
 
+<div id="status-msg">Menyimpan data...</div>
+
 <script>
     // ==========================================
-    // TETAPAN FIREBASE ANDA
+    // WEB APP URL GOOGLE SHEETS ANDA (Dikekalkan)
     // ==========================================
-    const firebaseConfig = {
-        apiKey: "AIzaSyBbAqOkHZf3caM6YybHXWKWbOF3MMG6_9c",
-        authDomain: "lot77-tracker.firebaseapp.com",
-        projectId: "lot77-tracker",
-        storageBucket: "lot77-tracker.firebasestorage.app",
-        messagingSenderId: "885759825036",
-        appId: "1:885759825036:web:a642b7f2b312fc47e597a9",
-        measurementId: "G-NB4B5XVFVZ",
-        databaseURL: "https://lot77-tracker-default-rtdb.asia-southeast1.firebasedatabase.app"
-    };
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVtbxvMhyRBX28m3pyLkSJ7u2UG0wamNpudlECxaRYHj8YvfX-Nx366NlI9ZOzrVuW/exec";
+    // ==========================================
 
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-
-    // Senarai data asal berasaskan imej
+    // Data dikemaskini berdasarkan gambar terbaru
     const defaultDataList = [
-        { plot: "A", name: "Mohd Izham Bin Mohd Hamzah", defaultSpa: true },
-        { plot: "B", name: "Mohd Hanafi Bin Mohd Yasin", defaultSpa: true },
-        { plot: "C", name: "Juliana Binti Jaafar", defaultSpa: false },
-        { plot: "D", name: "Norliza Binti Hussin", defaultSpa: false },
-        { plot: "E", name: "Abdul Rahim Bin Yaacob", defaultSpa: false },
-        { plot: "F", name: "Anitha Binti Mohd Salleh", defaultSpa: false },
-        { plot: "G", name: "Azri Bin Ghazali", defaultSpa: true },
-        { plot: "H", name: "Mohd Sharif Bin Paan", defaultSpa: false },
-        { plot: "I", name: "Ahmad Ridzuan Bin Zainal Abidin", defaultSpa: false },
-        { plot: "J", name: "Fauzan Bin Jaafar", defaultSpa: true },
-        { plot: "K", name: "Hazlina Binti Mustapha", defaultSpa: false },
-        { plot: "L", name: "Pesak Amri Bin Sani", defaultSpa: false },
-        { plot: "M", name: "Nur Dini Humaira Binti Mohamad Yusoff", defaultSpa: false },
-        { plot: "N", name: "Azman Bin Abu Bakar", defaultSpa: false },
-        { plot: "O", name: "Azam Syamir Bin Norizam", defaultSpa: false },
-        { plot: "10", name: "Siti Nurhidayah Binti Abdul Razak", defaultSpa: false },
-        { plot: "11", name: "Rokiah Binti Daiman", defaultSpa: false },
-        { plot: "12", name: "Anuar Bin Ahmad", defaultSpa: false },
-        { plot: "13", name: "Anuar Bin Ahmad", defaultSpa: false },
-        { plot: "14", name: "Mohd Anuar Bin Mat Isa", defaultSpa: false },
-        { plot: "15", name: "Mohd Anuar Bin Mat Isa", defaultSpa: false },
-        { plot: "16", name: "Meor Ibrahim Bin Meor Harun", defaultSpa: false },
-        { plot: "17", name: "Kamarudin Bin Ismail", defaultSpa: true },
-        { plot: "18", name: "Datin Saniah Musa", defaultSpa: true },
-        { plot: "19", name: "Mohd Faizal Bin Abdullah @ Husain (Cikgu)", defaultSpa: false },
-        { plot: "20", name: "En. Rahman", defaultSpa: false },
-        { plot: "21", name: "Halimatus Sa'adiah Binti Talib (Cikgu)", defaultSpa: false },
-        { plot: "23", name: "Hajah Siti Norashikin", defaultSpa: false },
-        { plot: "24", name: "", defaultSpa: false },
-        { plot: "25", name: "", defaultSpa: false },
-        { plot: "26", name: "", defaultSpa: false },
-        { plot: "27", name: "", defaultSpa: false },
-        { plot: "28", name: "", defaultSpa: false },
-        { plot: "29", name: "", defaultSpa: false },
-        { plot: "30", name: "", defaultSpa: false },
-        { plot: "31", name: "", defaultSpa: false },
-        { plot: "32", name: "", defaultSpa: false },
-        { plot: "33", name: "", defaultSpa: false },
-        { plot: "34", name: "En. Masiron", defaultSpa: true },
-        { plot: "35", name: "", defaultSpa: false }
-    ];
-
-    const tbody = document.querySelector("#landTable tbody");
-
-    // Mendengar sebarang perubahan data dari Firebase secara Realtime (Dengan penangkap ralat)
-    database.ref('lot77').on('value', (snapshot) => {
-        const cloudData = snapshot.val() || {};
-        renderTable(cloudData);
-    }, (error) => {
-        console.error("Ralat Firebase:", error);
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="5" style="text-align: center; padding: 30px; color: #c0392b; background-color: #fdebd0;">
-                    <b>Terdapat ralat sambungan pangkalan data!</b><br><br>
-                    Sila pastikan anda telah menukar <b>Rules</b> di Firebase kepada:<br>
-                    <code style="background:#fff; padding:5px; border-radius:3px; display:inline-block; margin-top:10px; color:#333;">".read": true, ".write": true</code><br><br>
-                    <i>Mesej Teknikal: ${error.message}</i>
-                </td>
-            </tr>`;
-    });
-
-    function renderTable(cloudData) {
-        tbody.innerHTML = "";
-        
-        defaultDataList.forEach((item) => {
-            const tr = document.createElement("tr");
-            const plotKey = item.plot;
-
-            const isKaveatTicked = (cloudData[plotKey] && cloudData[plotKey].kaveat) || false;
-            
-            let isSpaTicked = item.defaultSpa;
-            if (cloudData[plotKey] && cloudData[plotKey].hasOwnProperty('spa')) {
-                isSpaTicked = cloudData[plotKey].spa;
-            }
-            
-            const isPindahMilikTicked = (cloudData[plotKey] && cloudData[plotKey].pindahmilik) || false;
-
-            const kaveatClass = isKaveatTicked ? 'center-check ticked-cell' : 'center-check';
-            const spaClass = isSpaTicked ? 'center-check ticked-cell' : 'center-check';
-            const pindahMilikClass = isPindahMilikTicked ? 'center-check ticked-cell' : 'center-check';
-
-            const cloudName = (cloudData[plotKey] && cloudData[plotKey].name !== undefined) ? cloudData[plotKey].name : item.name;
-            
-            let nameContent = "";
-            if (item.name === "") {
-                nameContent = `<input type="text" class="name-input" data-plot="${plotKey}" value="${cloudName}" placeholder="Taip nama pemilik baru...">`;
-            } else {
-                nameContent = cloudName;
-            }
-
-            tr.innerHTML = `
-                <td style="text-align: center; font-weight: bold;">${item.plot}</td>
-                <td>${nameContent}</td>
-                <td class="${kaveatClass}">
-                    <input type="checkbox" data-plot="${plotKey}" data-type="kaveat" ${isKaveatTicked ? 'checked' : ''}>
-                </td>
-                <td class="${spaClass}">
-                    <input type="checkbox" data-plot="${plotKey}" data-type="spa" ${isSpaTicked ? 'checked' : ''}>
-                </td>
-                <td class="${pindahMilikClass}">
-                    <input type="checkbox" data-plot="${plotKey}" data-type="pindahmilik" ${isPindahMilikTicked ? 'checked' : ''}>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-
-        // Hantar perubahan Checkbox ke Firebase
-        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const plot = this.getAttribute('data-plot');
-                const type = this.getAttribute('data-type');
-                const isChecked = this.checked;
-
-                database.ref('lot77/' + plot + '/' + type).set(isChecked);
-            });
-        });
-
-        // Hantar perubahan Nama ke Firebase
-        document.querySelectorAll('.name-input').forEach(input => {
-            input.addEventListener('change', function() { 
-                const plot = this.getAttribute('data-plot');
-                const newName = this.value;
-
-                database.ref('lot77/' + plot + '/name').set(newName);
-            });
-        });
-    }
-
-    function clearData() {
-        if(confirm("Adakah anda pasti untuk memadam/reset semua rekod di pangkalan data awan (cloud)?")) {
-            database.ref('lot77').remove();
-        }
-    }
-</script>
-
-</body>
-</html>
+        { plot: "A", name: "Dr. Mohd Izham Bin Mohd Hamzah", defKav: true, defSpa: false, defPM: false },
+        { plot: "B", name: "En. Mohd Hanafi Bin Mohd Yasin", defKav: true, defSpa: false, defPM: false },
+        { plot: "C", name: "Puan Juliana Binti Jaafar", defKav: true, defSpa: false, defPM: false },
+        { plot: "D", name: "Norliza Binti Hussin", defKav: true, defSpa: false, defPM: false },
+        { plot: "E", name: "Abdul Rahim Bin Yaacob", tiadaKaveat: true, defKav: false, defSpa: true, defPM: true },
+        { plot: "F", name: "Anitha Binti Mohd Salleh", defKav: true, defSpa: false, defPM: false },
+        { plot: "G", name: "Haji Azri Bin Ghazali", tiadaKaveat: true, defKav: false, defSpa: true, defPM: true },
+        { plot: "H", name: "Mohd Sharif Bin Paan", defKav: true, defSpa: false, defPM: false },
+        { plot: "I", name: "Ahmad Ridzuan Bin Zainal Abidin", defKav: true, defSpa: false, defPM: false },
+        { plot: "J", name: "Fauzan Bin Jaafar", defKav: true, defSpa: false, defPM: false },
+        { plot: "K", name: "Hazlina Binti Mustapha", defKav: true, defSpa: false, defPM: false },
+        { plot: "L", name: "Pesak Amri Bin Sani", defKav: true, defSpa: false, defPM: false },
+        { plot: "M", name: "Nur Dini Humaira Binti Mohamad Yusoff", defKav: true, defSpa: false, defPM: false },
+        { plot: "N", name: "Azman Bin Abu Bakar", defKav: true, defSpa: false, defPM: false },
+        { plot: "O", name: "Azam Syamir Bin Norizam", defKav: true, defSpa: false, defPM: false },
+        { plot: "10", name: "Siti Nurhidayah Binti Abdul Razak", defKav: true, defSpa: false, defPM: false },
+        { plot: "11", name: "Rokiah Binti Daiman", defKav: true, defSpa: false, defPM: false },
+        { plot: "12", name: "Ts. Dr. Anuar Bin Ahmad", defKav: true, defSpa: false, defPM: false },
+        { plot: "13", name: "Ts. Dr. Anuar Bin Ahmad", defKav: true, defSpa: false, defPM: false },
+        { plot: "14", name: "Mohd Anuar Bin Mat Isa", defKav: true, defSpa: false, defPM: false },
+        { plot: "15", name: "Mohd Anuar Bin Mat Isa", defKav: true, defSpa: false, defPM: false },
+        { plot: "16", name: "Meor Ibrahim Bin Meor Harun", defKav: true, defSpa: false, defPM: false },
+        { plot: "17", name: "Kamarudin Bin Ismail", tiadaKaveat: true, defKav: false, defSpa: true, defPM: true },
+        { plot: "18", name: "Datin Saniah Musa", defKav: true, defSpa: false, defPM: false },
+        { plot: "19", name: "Mohd Faizal Bin Abdullah @ Husain (Cikgu)", tiadaKaveat: true, defKav: false, defSpa: true, defPM: true },
+        { plot: "20", name: "En. Rahman", defKav: true, defSpa: false, defPM: false },
+        { plot: "21", name: "Halimatus Sa'adiah Binti Talib (Cikgu)", defKav: true, defSpa: false, defPM: false },
+        { plot: "23",
