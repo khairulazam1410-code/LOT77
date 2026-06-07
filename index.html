@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Status Pengurusan LOT 77</title>
+    <title>Status Pengurusan LOT 77 (Firebase Live)</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -66,7 +70,7 @@
         
         /* Highlight hijau bila tick */
         .ticked-cell {
-            background-color: #d5f5e3 !important; /* Warna hijau lembut */
+            background-color: #d5f5e3 !important; 
         }
 
         /* Input untuk nama kosong */
@@ -82,6 +86,7 @@
             display: flex;
             justify-content: space-between;
             margin-bottom: 15px;
+            align-items: center;
         }
         button {
             padding: 10px 15px;
@@ -96,19 +101,20 @@
             background-color: #c0392b;
         }
         .info-text {
-            font-size: 12px;
-            color: #7f8c8d;
+            font-size: 13px;
+            color: #27ae60;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Senarai Pengurusan Hartanah: LOT 77</h2>
+    <h2>Senarai Pengurusan Hartanah: LOT 77 (Sistem Cloud)</h2>
     
     <div class="controls">
-        <span class="info-text">💡 Perubahan nama & tick akan disimpan secara automatik. Kotak akan jadi hijau jika siap.</span>
-        <button onclick="clearData()">Reset Semua Data</button>
+        <span class="info-text">☁️ Firebase Connected: Data dikemaskini secara LIVE di semua peranti.</span>
+        <button onclick="clearData()">Reset Semua Data Cloud</button>
     </div>
 
     <div class="table-responsive">
@@ -123,15 +129,36 @@
                 </tr>
             </thead>
             <tbody>
-                <!-- Baris akan dijana oleh JavaScript -->
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 30px; color: #7f8c8d;">Memuatkan data dari awan (cloud)...</td>
+                </tr>
             </tbody>
         </table>
     </div>
 </div>
 
 <script>
-    // Data asas
-    const dataList = [
+    // ==========================================
+    // TETAPAN FIREBASE MILIK ANDA LENGKAP
+    // ==========================================
+    const firebaseConfig = {
+        apiKey: "AIzaSyBbAqOkHZf3caM6YybHXWKWbOF3MMG6_9c",
+        authDomain: "lot77-tracker.firebaseapp.com",
+        projectId: "lot77-tracker",
+        storageBucket: "lot77-tracker.firebasestorage.app",
+        messagingSenderId: "885759825036",
+        appId: "1:885759825036:web:a642b7f2b312fc47e597a9",
+        measurementId: "G-NB4B5XVFVZ",
+        databaseURL: "https://lot77-tracker-default-rtdb.asia-southeast1.firebasedatabase.app"
+    };
+    // ==========================================
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // Senarai data asal berasaskan imej
+    const defaultDataList = [
         { plot: "A", name: "Mohd Izham Bin Mohd Hamzah", defaultSpa: true },
         { plot: "B", name: "Mohd Hanafi Bin Mohd Yasin", defaultSpa: true },
         { plot: "C", name: "Juliana Binti Jaafar", defaultSpa: false },
@@ -176,96 +203,89 @@
 
     const tbody = document.querySelector("#landTable tbody");
 
-    // Load data tersimpan
-    const savedData = JSON.parse(localStorage.getItem("lot77Data")) || {};
+    // Mendengar sebarang perubahan data dari Firebase cloud secara Realtime
+    database.ref('lot77').on('value', (snapshot) => {
+        const cloudData = snapshot.val() || {};
+        renderTable(cloudData);
+    });
 
-    function renderTable() {
+    function renderTable(cloudData) {
         tbody.innerHTML = "";
         
-        dataList.forEach((item) => {
+        defaultDataList.forEach((item) => {
             const tr = document.createElement("tr");
+            const plotKey = item.plot;
 
-            // Tick status
-            const isKaveatTicked = savedData[`${item.plot}_kaveat`] || false;
-            const isSpaTicked = savedData.hasOwnProperty(`${item.plot}_spa`) ? savedData[`${item.plot}_spa`] : item.defaultSpa;
-            const isPindahMilikTicked = savedData[`${item.plot}_pindahmilik`] || false;
+            // Dapatkan data daripada cloud, sekiranya tiada guna data asal (default)
+            const isKaveatTicked = (cloudData[plotKey] && cloudData[plotKey].kaveat) || false;
+            
+            let isSpaTicked = item.defaultSpa;
+            if (cloudData[plotKey] && cloudData[plotKey].hasOwnProperty('spa')) {
+                isSpaTicked = cloudData[plotKey].spa;
+            }
+            
+            const isPindahMilikTicked = (cloudData[plotKey] && cloudData[plotKey].pindahmilik) || false;
 
-            // Warna hijau jika di-tick
+            // Kelas CSS warna latar (hijau jika di-tick)
             const kaveatClass = isKaveatTicked ? 'center-check ticked-cell' : 'center-check';
             const spaClass = isSpaTicked ? 'center-check ticked-cell' : 'center-check';
             const pindahMilikClass = isPindahMilikTicked ? 'center-check ticked-cell' : 'center-check';
 
-            // Nama (Input text untuk yang kosong)
-            const savedCustomName = savedData[`${item.plot}_name`];
-            const displayName = savedCustomName !== undefined ? savedCustomName : item.name;
+            // Semak paparan nama custom atau asal
+            const cloudName = (cloudData[plotKey] && cloudData[plotKey].name !== undefined) ? cloudData[plotKey].name : item.name;
             
             let nameContent = "";
             if (item.name === "") {
-                nameContent = `<input type="text" class="name-input" data-plot="${item.plot}" value="${displayName}" placeholder="Sila isi nama & automatik disave...">`;
+                nameContent = `<input type="text" class="name-input" data-plot="${plotKey}" value="${cloudName}" placeholder="Taip nama pemilik baru...">`;
             } else {
-                nameContent = displayName;
+                nameContent = cloudName;
             }
 
             tr.innerHTML = `
                 <td style="text-align: center; font-weight: bold;">${item.plot}</td>
                 <td>${nameContent}</td>
                 <td class="${kaveatClass}">
-                    <input type="checkbox" data-plot="${item.plot}" data-type="kaveat" ${isKaveatTicked ? 'checked' : ''}>
+                    <input type="checkbox" data-plot="${plotKey}" data-type="kaveat" ${isKaveatTicked ? 'checked' : ''}>
                 </td>
                 <td class="${spaClass}">
-                    <input type="checkbox" data-plot="${item.plot}" data-type="spa" ${isSpaTicked ? 'checked' : ''}>
+                    <input type="checkbox" data-plot="${plotKey}" data-type="spa" ${isSpaTicked ? 'checked' : ''}>
                 </td>
                 <td class="${pindahMilikClass}">
-                    <input type="checkbox" data-plot="${item.plot}" data-type="pindahmilik" ${isPindahMilikTicked ? 'checked' : ''}>
+                    <input type="checkbox" data-plot="${plotKey}" data-type="pindahmilik" ${isPindahMilikTicked ? 'checked' : ''}>
                 </td>
             `;
             tbody.appendChild(tr);
         });
 
-        // Event Listener untuk Checkbox (Tick & tukar warna)
+        // Event Listener untuk penukaran Checkbox (Hantar ke Firebase)
         document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
             checkbox.addEventListener('change', function() {
                 const plot = this.getAttribute('data-plot');
                 const type = this.getAttribute('data-type');
                 const isChecked = this.checked;
 
-                // Update kelas warna latar
-                if(isChecked) {
-                    this.parentElement.classList.add('ticked-cell');
-                } else {
-                    this.parentElement.classList.remove('ticked-cell');
-                }
-
-                // Save data
-                savedData[`${plot}_${type}`] = isChecked;
-                localStorage.setItem("lot77Data", JSON.stringify(savedData));
+                // Simpan terus ke database
+                database.ref('lot77/' + plot + '/' + type).set(isChecked);
             });
         });
 
-        // Event Listener untuk Nama Input (Save Automatik bila ditaip)
+        // Event Listener untuk Input Nama (Hantar ke Firebase)
         document.querySelectorAll('.name-input').forEach(input => {
-            input.addEventListener('input', function() {
+            input.addEventListener('change', function() { 
                 const plot = this.getAttribute('data-plot');
                 const newName = this.value;
 
-                // Save nama 
-                savedData[`${plot}_name`] = newName;
-                localStorage.setItem("lot77Data", JSON.stringify(savedData));
+                database.ref('lot77/' + plot + '/name').set(newName);
             });
         });
     }
 
-    // Fungsi Padam Data
+    // Fungsi Padam Data Keseluruhan di Cloud
     function clearData() {
-        if(confirm("Adakah anda pasti untuk memadam semua rekod tapak, nama dan bayaran?")) {
-            localStorage.removeItem("lot77Data");
-            for (let key in savedData) delete savedData[key];
-            renderTable(); 
+        if(confirm("Adakah anda pasti untuk memadam/reset semua rekod di pangkalan data awan (cloud)?")) {
+            database.ref('lot77').remove();
         }
     }
-
-    // Run kali pertama
-    renderTable();
 </script>
 
 </body>
