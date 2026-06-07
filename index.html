@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Status Pengurusan LOT 77 (Google Sheets)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Status Pengurusan LOT 77</title>
     
     <style>
         body {
@@ -11,7 +11,7 @@
             background-color: #f4f7f6;
             color: #333;
             margin: 0;
-            padding: 15px;
+            padding: 10px;
         }
         .container {
             max-width: 1000px;
@@ -27,10 +27,11 @@
             margin-bottom: 20px;
             border-bottom: 2px solid #3498db;
             padding-bottom: 10px;
-            font-size: 24px;
+            font-size: 22px;
         }
         .table-responsive {
             width: 100%;
+            overflow-x: hidden;
         }
         table {
             width: 100%;
@@ -41,160 +42,334 @@
             border: 1px solid #ddd;
             padding: 12px;
             text-align: left;
-            transition: background-color 0.3s;
         }
         th {
             background-color: #34495e;
             color: white;
-            position: sticky;
-            top: 0;
-            z-index: 10;
             text-align: center;
-        }
-        tr:nth-child(even) td:not(.ticked-cell):not(.unticked-cell):not(.tiada-kaveat-cell) {
-            background-color: #f9f9f9;
-        }
-        tr:hover td:not(.ticked-cell):not(.unticked-cell):not(.tiada-kaveat-cell) {
-            background-color: #f1f1f1;
         }
         .center-check {
             text-align: center;
         }
         input[type="checkbox"] {
-            transform: scale(1.5);
+            transform: scale(1.8);
             cursor: pointer;
             accent-color: #27ae60;
+            margin: 5px;
         }
         
-        /* WARNA HIJAU UNTUK SELESAI */
-        .ticked-cell {
-            background-color: #d5f5e3 !important; 
-        }
-        /* WARNA MERAH UNTUK BELUM SELESAI */
-        .unticked-cell {
-            background-color: #fadbd8 !important; 
-        }
-        /* KELABU UNTUK TIADA KAVEAT */
-        .tiada-kaveat-cell {
-            background-color: #eaeded !important;
-            color: #7f8c8d;
-            font-weight: bold;
-            font-size: 13px;
-            text-align: center;
-        }
+        /* WARNA KOTAK */
+        .ticked-cell { background-color: #d5f5e3 !important; }
+        .unticked-cell { background-color: #fadbd8 !important; }
+        .tiada-kaveat-cell { background-color: #eaeded !important; color: #7f8c8d; font-weight: bold; font-size: 13px; text-align: center; }
 
         .name-input {
-            width: 95%;
-            padding: 8px;
+            width: 100%;
+            padding: 10px;
             border: 1px solid #bdc3c7;
             border-radius: 4px;
             font-family: inherit;
             box-sizing: border-box;
+            font-size: 14px;
         }
         .controls {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            align-items: center;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+            background: #eaf2f8;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .info-text {
+            font-size: 13px;
+            color: #2980b9;
+            font-weight: bold;
+            text-align: center;
         }
         button {
-            padding: 10px 15px;
-            background-color: #e74c3c;
+            padding: 12px;
+            background-color: #3498db;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
+            width: 100%;
+            font-size: 15px;
         }
         button:hover {
-            background-color: #c0392b;
-        }
-        .btn-refresh {
-            background-color: #3498db;
-        }
-        .btn-refresh:hover {
             background-color: #2980b9;
-        }
-        .info-text {
-            font-size: 13px;
-            color: #27ae60;
-            font-weight: bold;
         }
         #status-msg {
             position: fixed;
             bottom: 20px;
-            right: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             background: #2c3e50;
             color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 12px 25px;
+            border-radius: 30px;
             display: none;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             z-index: 1000;
+            font-weight: bold;
+            white-space: nowrap;
         }
 
         /* ========================================================
-           SETTING KHAS UNTUK SKRIN KECIL (MOBILE HANDPHONE)
+           RESPONSIVE MOBILE VIEW (Bentuk Kad Menegak)
            ======================================================== */
         @media screen and (max-width: 768px) {
-            h2 {
-                font-size: 20px; /* Saiz tajuk dikecilkan sikit */
-            }
-            .controls {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-            .controls div {
-                display: flex;
-                width: 100%;
-                gap: 10px;
-            }
-            .controls button {
-                flex: 1; /* Butang jadi sama saiz dan penuh skrin */
-            }
-            
-            /* Tukar Table kepada bentuk Kad (Card) */
             table, thead, tbody, th, td, tr {
                 display: block;
             }
             thead {
-                display: none; /* Sembunyikan header atas */
+                display: none; /* Sorok header jadual */
             }
             tr {
-                margin-bottom: 20px;
-                border: 1px solid #ccc;
-                border-radius: 8px;
+                margin-bottom: 25px;
+                border: 2px solid #bdc3c7;
+                border-radius: 10px;
                 overflow: hidden;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                background-color: #fff;
             }
             td {
-                display: flex;
-                justify-content: space-between; /* Susun label ke kiri, data ke kanan */
-                align-items: center;
+                display: block;
+                text-align: left !important;
                 border: none;
                 border-bottom: 1px solid #eee;
-                padding: 12px 15px;
-                text-align: right !important; /* Teks di sebelah kanan */
+                padding: 15px;
+                position: relative;
             }
             td:last-child {
                 border-bottom: none;
             }
-            
-            /* Letak label palsu (pseudo-element) di sebelah kiri */
+            /* Label Tajuk pada Mobile */
             td::before {
                 content: attr(data-label);
+                display: block;
                 font-weight: bold;
                 color: #2c3e50;
-                width: 45%;
+                margin-bottom: 10px;
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            .center-check {
                 text-align: left;
-                font-size: 13px;
-                line-height: 1.4;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Status LOT 77 (Google Sheets)</h2>
+    
+    <div class="controls">
+        <span class="info-text">☁️ Data disimpan terus ke Google Sheets (Automatik)<br>🟢 Hijau = Selesai | 🔴 Merah = Belum</span>
+        <button onclick="loadData()">🔄 Refresh Data Terkini</button>
+    </div>
+
+    <div class="table-responsive">
+        <table id="landTable">
+            <thead>
+                <tr>
+                    <th width="5%">PLOT</th>
+                    <th width="35%">NAMA</th>
+                    <th width="15%">Tarik Kaveat</th>
+                    <th width="20%">Bayaran SPA<br><small>(RM272.40 / RM372.40)</small></th>
+                    <th width="25%">Bayaran Pindah Milik<br><small>(Mengikut invoice)</small></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 40px 20px; color: #3498db; font-weight: bold;">
+                        ⏳ Mengambil rekod dari pangkalan data...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="status-msg">Menyimpan...</div>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2aOd2-P7FT2zDuBh2is_DEGA473zRPqZf_e-RjGg8cE3QJFB0I-I51hF_URFQ-RfB/exec";
+
+    const defaultDataList = [
+        { plot: "A", name: "Dr. Mohd Izham Bin Mohd Hamzah", defKav: true, defSpa: false, defPM: false },
+        { plot: "B", name: "En. Mohd Hanafi Bin Mohd Yasin", defKav: true, defSpa: false, defPM: false },
+        { plot: "C", name: "Puan Juliana Binti Jaafar", defKav: true, defSpa: false, defPM: false },
+        { plot: "D", name: "Norliza Binti Hussin", defKav: true, defSpa: false, defPM: false },
+        { plot: "E", name: "Abdul Rahim Bin Yaacob", tiadaKaveat: true, defKav: false, defSpa: true, defPM: true },
+        { plot: "F", name: "Anitha Binti Mohd Salleh", defKav: true, defSpa: false, defPM: false },
+        { plot: "G", name: "Haji Azri Bin Ghazali", tiadaKaveat: true, defKav: false, defSpa: true, defPM: true },
+        { plot: "H", name: "Mohd Sharif Bin Paan", defKav: true, defSpa: false, defPM: false },
+        { plot: "I", name: "Ahmad Ridzuan Bin Zainal Abidin", defKav: true, defSpa: false, defPM: false },
+        { plot: "J", name: "Fauzan Bin Jaafar", defKav: true, defSpa: false, defPM: false },
+        { plot: "K", name: "Hazlina Binti Mustapha", defKav: true, defSpa: false, defPM: false },
+        { plot: "L", name: "Pesak Amri Bin Sani", defKav: true, defSpa: false, defPM: false },
+        { plot: "M", name: "Nur Dini Humaira Binti Mohamad Yusoff", defKav: true, defSpa: false, defPM: false },
+        { plot: "N", name: "Azman Bin Abu Bakar", defKav: true, defSpa: false, defPM: false },
+        { plot: "O", name: "Azam Syamir Bin Norizam", defKav: true, defSpa: false, defPM: false },
+        { plot: "10", name: "Siti Nurhidayah Binti Abdul Razak", defKav: true, defSpa: false, defPM: false },
+        { plot: "11", name: "Rokiah Binti Daiman", defKav: true, defSpa: false, defPM: false },
+        { plot: "12", name: "Ts. Dr. Anuar Bin Ahmad", defKav: true, defSpa: false, defPM: false },
+        { plot: "13", name: "Ts. Dr. Anuar Bin Ahmad", defKav: true, defSpa: false, defPM: false },
+        { plot: "14", name: "Mohd Anuar Bin Mat Isa", defKav: true, defSpa: false, defPM: false },
+        { plot: "15", name: "Mohd Anuar Bin Mat Isa", defKav: true, defSpa: false, defPM: false },
+        { plot: "16", name: "Meor Ibrahim Bin Meor Harun", defKav: true, defSpa: false, defPM: false },
+        { plot: "17", name: "Kamarudin Bin Ismail", tiadaKaveat: true, defKav: false, defSpa: true, defPM: true },
+        { plot: "18", name: "Datin Saniah Musa", defKav: true, defSpa: false, defPM: false },
+        { plot: "19", name: "Mohd Faizal Bin Abdullah @ Husain (Cikgu)", tiadaKaveat: true, defKav: false, defSpa: true, defPM: true },
+        { plot: "20", name: "En. Rahman", defKav: true, defSpa: false, defPM: false },
+        { plot: "21", name: "Halimatus Sa'adiah Binti Talib (Cikgu)", defKav: true, defSpa: false, defPM: false },
+        { plot: "23", name: "Hajah Siti Norashikin", defKav: true, defSpa: false, defPM: false },
+        { plot: "24", name: "", defKav: false, defSpa: false, defPM: false },
+        { plot: "25", name: "", defKav: false, defSpa: false, defPM: false },
+        { plot: "26", name: "", defKav: false, defSpa: false, defPM: false },
+        { plot: "27", name: "", defKav: false, defSpa: false, defPM: false },
+        { plot: "28", name: "", defKav: false, defSpa: false, defPM: false },
+        { plot: "29", name: "", defKav: false, defSpa: false, defPM: false },
+        { plot: "30", name: "", defKav: false, defSpa: false, defPM: false },
+        { plot: "31", name: "", defKav: false, defSpa: false, defPM: false },
+        { plot: "32", name: "", defKav: false, defSpa: false, defPM: false },
+        { plot: "33", name: "", defKav: false, defSpa: false, defPM: false },
+        { plot: "34", name: "En. Masiron", defKav: true, defSpa: true, defPM: true },
+        { plot: "35", name: "", defKav: false, defSpa: false, defPM: false }
+    ];
+
+    const tbody = document.querySelector("#landTable tbody");
+    const statusMsg = document.getElementById("status-msg");
+
+    function showStatus(message) {
+        statusMsg.textContent = message;
+        statusMsg.style.display = "block";
+        setTimeout(() => { statusMsg.style.display = "none"; }, 2500);
+    }
+
+    function loadData() {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 40px 20px; color: #3498db; font-weight: bold;">⏳ Menyegarkan data...</td></tr>`;
+        
+        fetch(SCRIPT_URL)
+            .then(response => response.json())
+            .then(sheetsData => {
+                renderTable(sheetsData);
+            })
+            .catch(error => {
+                console.error("Ralat fetching data:", error);
+                alert("Gagal memuat turun data dari pelayan. Sila semak sambungan internet anda.");
+                renderTable({});
+            });
+    }
+
+    function renderTable(sheetsData) {
+        tbody.innerHTML = "";
+        
+        defaultDataList.forEach((item) => {
+            const tr = document.createElement("tr");
+            const plotKey = item.plot;
+
+            let isKaveatTicked = item.defKav;
+            if (sheetsData[plotKey] && sheetsData[plotKey].hasOwnProperty('kaveat')) {
+                isKaveatTicked = sheetsData[plotKey].kaveat;
             }
             
-            .name-input {
-                width: 100%;
+            let isSpaTicked = item.defSpa;
+            if (sheetsData[plotKey] && sheetsData[plotKey].hasOwnProperty('spa')) {
+                isSpaTicked = sheetsData[plotKey].spa;
             }
-            /* Besarkan sikit kotak checkbox untuk mudah ditekan jari */
-            input[type="checkbox"] {
-                transform:
+            
+            let isPindahMilikTicked = item.defPM;
+            if (sheetsData[plotKey] && sheetsData[plotKey].hasOwnProperty('pindahmilik')) {
+                isPindahMilikTicked = sheetsData[plotKey].pindahmilik;
+            }
+
+            const kaveatClass = item.tiadaKaveat ? 'tiada-kaveat-cell' : (isKaveatTicked ? 'ticked-cell' : 'unticked-cell');
+            const spaClass = isSpaTicked ? 'ticked-cell' : 'unticked-cell';
+            const pindahMilikClass = isPindahMilikTicked ? 'ticked-cell' : 'unticked-cell';
+
+            const savedName = (sheetsData[plotKey] && sheetsData[plotKey].name !== undefined && sheetsData[plotKey].name !== "") ? sheetsData[plotKey].name : item.name;
+            let nameContent = `<input type="text" class="name-input" data-plot="${plotKey}" value="${savedName}" placeholder="Taip nama di sini...">`;
+
+            let kaveatContent = '';
+            if (item.tiadaKaveat) {
+                kaveatContent = 'TIADA KAVEAT';
+            } else {
+                kaveatContent = `<label style="display:flex; align-items:center;"><input type="checkbox" data-plot="${plotKey}" data-type="kaveat" ${isKaveatTicked ? 'checked' : ''}><span style="margin-left:8px; font-weight:bold; color:#2c3e50;">Kaveat Disahkan</span></label>`;
+            }
+
+            let spaContent = `<label style="display:flex; align-items:center;"><input type="checkbox" data-plot="${plotKey}" data-type="spa" ${isSpaTicked ? 'checked' : ''}><span style="margin-left:8px; font-weight:bold; color:#2c3e50;">SPA Disahkan</span></label>`;
+            let pmContent = `<label style="display:flex; align-items:center;"><input type="checkbox" data-plot="${plotKey}" data-type="pindahmilik" ${isPindahMilikTicked ? 'checked' : ''}><span style="margin-left:8px; font-weight:bold; color:#2c3e50;">MOT Disahkan</span></label>`;
+
+            tr.innerHTML = `
+                <td data-label="📌 PLOT KAWASAN" style="font-weight: bold; font-size: 18px; color: #e74c3c; text-align:center;">${item.plot}</td>
+                <td data-label="👤 NAMA PEMILIK">${nameContent}</td>
+                <td data-label="📑 STATUS KAVEAT" class="${kaveatClass}">${kaveatContent}</td>
+                <td data-label="💵 BAYARAN SPA" class="${spaClass}">${spaContent}</td>
+                <td data-label="🤝 PINDAH MILIK (MOT)" class="${pindahMilikClass}">${pmContent}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const plot = this.getAttribute('data-plot');
+                const type = this.getAttribute('data-type');
+                const isChecked = this.checked;
+
+                if(isChecked) {
+                    this.closest('td').classList.add('ticked-cell');
+                    this.closest('td').classList.remove('unticked-cell');
+                } else {
+                    this.closest('td').classList.add('unticked-cell');
+                    this.closest('td').classList.remove('ticked-cell');
+                }
+
+                showStatus("Menyimpan...");
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'updateCheckbox',
+                        plot: plot,
+                        type: type,
+                        value: isChecked
+                    })
+                }).then(() => showStatus("✅ Disimpan!"))
+                  .catch(e => alert("Ralat sambungan: " + e));
+            });
+        });
+
+        document.querySelectorAll('.name-input').forEach(input => {
+            input.addEventListener('change', function() { 
+                const plot = this.getAttribute('data-plot');
+                const newName = this.value;
+
+                showStatus("Menyimpan nama...");
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'updateName',
+                        plot: plot,
+                        value: newName
+                    })
+                }).then(() => showStatus("✅ Disimpan!"))
+                  .catch(e => alert("Ralat sambungan: " + e));
+            });
+        });
+    }
+
+    // Auto-load bila website dibuka
+    loadData();
+
+</script>
+
+</body>
+</html>
