@@ -139,7 +139,7 @@
 
 <script>
     // ==========================================
-    // TETAPAN FIREBASE MILIK ANDA LENGKAP
+    // TETAPAN FIREBASE ANDA
     // ==========================================
     const firebaseConfig = {
         apiKey: "AIzaSyBbAqOkHZf3caM6YybHXWKWbOF3MMG6_9c",
@@ -151,7 +151,6 @@
         measurementId: "G-NB4B5XVFVZ",
         databaseURL: "https://lot77-tracker-default-rtdb.asia-southeast1.firebasedatabase.app"
     };
-    // ==========================================
 
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
@@ -203,10 +202,21 @@
 
     const tbody = document.querySelector("#landTable tbody");
 
-    // Mendengar sebarang perubahan data dari Firebase cloud secara Realtime
+    // Mendengar sebarang perubahan data dari Firebase secara Realtime (Dengan penangkap ralat)
     database.ref('lot77').on('value', (snapshot) => {
         const cloudData = snapshot.val() || {};
         renderTable(cloudData);
+    }, (error) => {
+        console.error("Ralat Firebase:", error);
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 30px; color: #c0392b; background-color: #fdebd0;">
+                    <b>Terdapat ralat sambungan pangkalan data!</b><br><br>
+                    Sila pastikan anda telah menukar <b>Rules</b> di Firebase kepada:<br>
+                    <code style="background:#fff; padding:5px; border-radius:3px; display:inline-block; margin-top:10px; color:#333;">".read": true, ".write": true</code><br><br>
+                    <i>Mesej Teknikal: ${error.message}</i>
+                </td>
+            </tr>`;
     });
 
     function renderTable(cloudData) {
@@ -216,7 +226,6 @@
             const tr = document.createElement("tr");
             const plotKey = item.plot;
 
-            // Dapatkan data daripada cloud, sekiranya tiada guna data asal (default)
             const isKaveatTicked = (cloudData[plotKey] && cloudData[plotKey].kaveat) || false;
             
             let isSpaTicked = item.defaultSpa;
@@ -226,12 +235,10 @@
             
             const isPindahMilikTicked = (cloudData[plotKey] && cloudData[plotKey].pindahmilik) || false;
 
-            // Kelas CSS warna latar (hijau jika di-tick)
             const kaveatClass = isKaveatTicked ? 'center-check ticked-cell' : 'center-check';
             const spaClass = isSpaTicked ? 'center-check ticked-cell' : 'center-check';
             const pindahMilikClass = isPindahMilikTicked ? 'center-check ticked-cell' : 'center-check';
 
-            // Semak paparan nama custom atau asal
             const cloudName = (cloudData[plotKey] && cloudData[plotKey].name !== undefined) ? cloudData[plotKey].name : item.name;
             
             let nameContent = "";
@@ -257,19 +264,18 @@
             tbody.appendChild(tr);
         });
 
-        // Event Listener untuk penukaran Checkbox (Hantar ke Firebase)
+        // Hantar perubahan Checkbox ke Firebase
         document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
             checkbox.addEventListener('change', function() {
                 const plot = this.getAttribute('data-plot');
                 const type = this.getAttribute('data-type');
                 const isChecked = this.checked;
 
-                // Simpan terus ke database
                 database.ref('lot77/' + plot + '/' + type).set(isChecked);
             });
         });
 
-        // Event Listener untuk Input Nama (Hantar ke Firebase)
+        // Hantar perubahan Nama ke Firebase
         document.querySelectorAll('.name-input').forEach(input => {
             input.addEventListener('change', function() { 
                 const plot = this.getAttribute('data-plot');
@@ -280,7 +286,6 @@
         });
     }
 
-    // Fungsi Padam Data Keseluruhan di Cloud
     function clearData() {
         if(confirm("Adakah anda pasti untuk memadam/reset semua rekod di pangkalan data awan (cloud)?")) {
             database.ref('lot77').remove();
