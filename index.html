@@ -48,14 +48,10 @@
             color: white;
             text-align: center;
         }
-        .center-check {
-            text-align: center;
-        }
         input[type="checkbox"] {
             transform: scale(1.8);
             cursor: pointer;
             accent-color: #27ae60;
-            margin: 5px;
         }
         
         /* WARNA KOTAK */
@@ -117,6 +113,19 @@
             white-space: nowrap;
         }
 
+        /* SETTING UNTUK KOTAK TICK (WEB) */
+        .check-wrapper {
+            display: flex;
+            justify-content: center; /* Duduk tengah-tengah kotak di Web */
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        .mobile-label-text {
+            display: none; /* Sorok teks di Web supaya kemas */
+        }
+
         /* ========================================================
            RESPONSIVE MOBILE VIEW (Bentuk Kad Menegak)
            ======================================================== */
@@ -156,8 +165,17 @@
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
             }
-            .center-check {
-                text-align: left;
+            
+            /* Susunan Checkbox & Teks di Mobile */
+            .check-wrapper {
+                justify-content: flex-start; /* Rapat ke kiri di telefon */
+            }
+            .mobile-label-text {
+                display: inline; /* Tunjuk teks di telefon */
+                margin-left: 10px;
+                font-weight: bold;
+                color: #2c3e50;
+                font-size: 15px;
             }
         }
     </style>
@@ -299,11 +317,11 @@
             if (item.tiadaKaveat) {
                 kaveatContent = 'TIADA KAVEAT';
             } else {
-                kaveatContent = `<label style="display:flex; align-items:center;"><input type="checkbox" data-plot="${plotKey}" data-type="kaveat" ${isKaveatTicked ? 'checked' : ''}><span style="margin-left:8px; font-weight:bold; color:#2c3e50;">Kaveat Ditarik</span></label>`;
+                kaveatContent = `<label class="check-wrapper"><input type="checkbox" data-plot="${plotKey}" data-type="kaveat" ${isKaveatTicked ? 'checked' : ''}><span class="mobile-label-text">Kaveat Ditarik</span></label>`;
             }
 
-            let spaContent = `<label style="display:flex; align-items:center;"><input type="checkbox" data-plot="${plotKey}" data-type="spa" ${isSpaTicked ? 'checked' : ''}><span style="margin-left:8px; font-weight:bold; color:#2c3e50;">SPA Dibayar</span></label>`;
-            let pmContent = `<label style="display:flex; align-items:center;"><input type="checkbox" data-plot="${plotKey}" data-type="pindahmilik" ${isPindahMilikTicked ? 'checked' : ''}><span style="margin-left:8px; font-weight:bold; color:#2c3e50;">MOT Dibayar</span></label>`;
+            let spaContent = `<label class="check-wrapper"><input type="checkbox" data-plot="${plotKey}" data-type="spa" ${isSpaTicked ? 'checked' : ''}><span class="mobile-label-text">SPA Dibayar</span></label>`;
+            let pmContent = `<label class="check-wrapper"><input type="checkbox" data-plot="${plotKey}" data-type="pindahmilik" ${isPindahMilikTicked ? 'checked' : ''}><span class="mobile-label-text">MOT Dibayar</span></label>`;
 
             tr.innerHTML = `
                 <td data-label="📌 PLOT KAWASAN" style="font-weight: bold; font-size: 18px; color: #e74c3c; text-align:center;">${item.plot}</td>
